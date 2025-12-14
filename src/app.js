@@ -28,6 +28,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get('/', (req, res) => {
+  res.send('Task API.');
+});
+app.get('/api', (req, res) => {
+  res.send('Task API.');
+});
+
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/projects", projectRoutes);
