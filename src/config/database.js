@@ -18,12 +18,12 @@ if (process.env.DB_DIALECT === "sqlite") {
             host: process.env.DB_HOST,
             port: process.env.DB_PORT,
             dialect: process.env.DB_DIALECT,
-            dialectOptions: {
-                ssl: {
-                    require: true,
-                    rejectUnauthorized: true
-                }
-            }
+            // dialectOptions: {
+            //     ssl: {
+            //         require: true,
+            //         rejectUnauthorized: true
+            //     }
+            // }
         }
     );
 }
