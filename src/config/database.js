@@ -1,3 +1,4 @@
+const mysql2 = require('mysql2');
 require("dotenv").config();
 const { Sequelize } = require("sequelize");
 
@@ -18,6 +19,7 @@ if (process.env.DB_DIALECT === "sqlite") {
             host: process.env.DB_HOST,
             port: process.env.DB_PORT,
             dialect: process.env.DB_DIALECT,
+            dialectModule: mysql2,
             dialectOptions: {
                 ssl: {
                     require: true,
