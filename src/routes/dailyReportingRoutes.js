@@ -11,6 +11,9 @@ router.get("/:id", auth, role("admin","manager", "user"), dailyReportingControll
 router.put("/:id", auth, role("admin","manager", "user"), dailyReportingController.updateReport);
 router.delete("/:id", auth, role("admin","manager", "user"), dailyReportingController.deleteReport);
 
+router.get("/daily-reports", auth, role("admin","manager", "user"), dailyReportingController.getDailyReports);
+
+
 // router.post("/", auth, role("admin", "manager", "user"), createReport);
 // router.get("/", auth, role("admin", "manager"), getAllReports);
 

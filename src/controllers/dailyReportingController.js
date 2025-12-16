@@ -4,37 +4,56 @@ const { DailyReportingModel, ProjectModel } = require("../models");
 exports.createReport = async (req, res) => {
   try {
     const { project_id, title, reporting_date } = req.body;
-    const user_id = req.user.id; // from JWT
+    const user_id = req.user.id;
 
     if (!project_id || !title || !reporting_date) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Optional: prevent duplicate per project per day per user
-    const exists = await DailyReportingModel.findOne({
-      where: {
-        project_id,
-        reporting_date,
-        user_id,
-      },
-    });
+    // Ensure title is always an array
+    const titles = Array.isArray(title) ? title : [title];
 
-    if (exists) {
-      return res
-        .status(409)
-        .json({ message: "Report already exists for this date" });
+    if (titles.length === 0) {
+      return res.status(400).json({ message: "At least one task is required" });
     }
 
-    const report = await DailyReportingModel.create({
-      user_id,
-      project_id,
-      title,
-      reporting_date,
+    // Find existing tasks for same user/project/date
+    const existingReports = await DailyReportingModel.findAll({
+      where: {
+        user_id,
+        project_id,
+        reporting_date,
+      },
+      attributes: ["title"],
     });
 
+    const existingTitles = existingReports.map(r => r.title);
+
+    // Filter out duplicates
+    const newTitles = titles.filter(
+      t => !existingTitles.includes(t)
+    );
+
+    if (newTitles.length === 0) {
+      return res.status(409).json({
+        message: "All tasks already exist for this date",
+      });
+    }
+
+    // Prepare records
+    const reportsToCreate = newTitles.map(taskTitle => ({
+      user_id,
+      project_id,
+      reporting_date,
+      title: taskTitle,
+    }));
+
+    const reports = await DailyReportingModel.bulkCreate(reportsToCreate);
+
     res.status(201).json({
-      message: "Daily report created",
-      report,
+      message: "Daily reports created",
+      count: reports.length,
+      reports,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -57,6 +76,32 @@ exports.getReports = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// Daily Reports
+exports.getDailyReports = async (req, res) => {
+  const reports = await DailyReportingModel.findAll({
+    where: { user_id: req.user.id },
+    include: { model: ProjectModel, attributes: ["id", "name"] },
+    order: [["reporting_date", "DESC"]],
+  });
+
+  // Group by date + project
+  const grouped = {};
+  reports.forEach(r => {
+    const key = `${r.reporting_date}_${r.project_id}`;
+    if (!grouped[key]) {
+      grouped[key] = {
+        date: r.reporting_date,
+        project: r.ProjectModel,
+        tasks: [],
+      };
+    }
+    grouped[key].tasks.push(r.title);
+  });
+
+  res.json(Object.values(grouped));
+};
+
 
 /* ================= GET REPORT BY ID ================= */
 exports.getReportById = async (req, res) => {
